@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Complaint - Hostel Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h3 class="card-title mb-0">📝 Submit a New Complaint</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label for="title" class="form-label">Complaint Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" placeholder="Brief summary of your issue" required>
+                            <small class="form-text text-muted">Example: Water leak in my room, Broken door lock, etc.</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Detailed Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="6" placeholder="Describe the issue in detail. This will be analyzed by our AI system to automatically categorize and prioritize your complaint." required></textarea>
+                            <small class="form-text text-muted">
+                                💡 Tip: Be specific about the issue. The more details you provide, the better our AI can categorize and prioritize it.
+                            </small>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>🤖 AI Processing:</strong> Your complaint will be automatically analyzed to:
+                            <ul class="mb-0 mt-2">
+                                <li>Categorize the issue (electrical, plumbing, WiFi, mess, safety, maintenance)</li>
+                                <li>Detect priority level based on urgency indicators</li>
+                                <li>Route to appropriate department</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                                ✅ Submit Complaint
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">
+                                ← Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Example Section -->
+    <div class="row mt-5">
+        <div class="col-md-8 offset-md-2">
+            <h5 class="mb-3">📌 Example Complaints (AI will auto-categorize):</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>Electrical Issue:</strong>
+                        <p class="mb-0">"The light bulb in room A101 is broken and the socket is sparking when I try to use it."</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>Safety Issue:</strong>
+                        <p class="mb-0">"An unknown person was seen near the girls' hostel at night. Please increase security patrols."</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>Plumbing Issue:</strong>
+                        <p class="mb-0">"Water is leaking from the ceiling in the third floor bathroom, risking electrical hazard."</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>WiFi Issue:</strong>
+                        <p class="mb-0">"Internet connection keeps disconnecting every few minutes, making online classes impossible."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

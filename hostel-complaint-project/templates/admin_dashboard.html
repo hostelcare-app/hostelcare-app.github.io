@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Complaint Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">📊 Admin Dashboard</h1>
+    
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Complaints</h6>
+                    <h2>{{ stats.total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">High Priority</h6>
+                    <h2>{{ stats.high_priority }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">In Progress</h6>
+                    <h2>{{ stats.in_progress }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Resolved</h6>
+                    <h2>{{ stats.resolved }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Complaints Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">All Complaints</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Student</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for complaint in complaints %}
+                        <tr>
+                            <td>#{{ complaint.id }}</td>
+                            <td>{{ complaint.author.name }}</td>
+                            <td>{{ complaint.title }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ complaint.category }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span>
+                            </td>
+                            <td>
+                                <span class="status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span>
+                            </td>
+                            <td><small>{{ complaint.created_at.strftime('%d %b %Y') }}</small></td>
+                            <td>
+                                <a href="{{ url_for('view_complaint', complaint_id=complaint.id) }}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

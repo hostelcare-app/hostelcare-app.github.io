@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}My Complaints - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">📋 My Complaints</h1>
+            <p class="text-muted">Track your hostel complaints and their status</p>
+        </div>
+        <div class="col-md-4">
+            <a href="{{ url_for('submit_complaint') }}" class="btn btn-primary btn-lg w-100">
+                ➕ Submit New Complaint
+            </a>
+        </div>
+    </div>
+    
+    {% if complaints %}
+    <div class="row">
+        {% for complaint in complaints %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title mb-2">{{ complaint.title }}</h5>
+                            <small class="text-muted">{{ complaint.created_at.strftime('%d %b %Y, %H:%M') }}</small>
+                        </div>
+                        <span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted">{{ complaint.description[:100] }}...</p>
+                    <div class="mb-3">
+                        <span class="badge bg-info">{{ complaint.category }}</span>
+                        <span class="status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span>
+                    </div>
+                    {% if complaint.ai_confidence %}
+                    <small class="text-muted d-block">
+                        AI Confidence: {{ "%.1f"|format(complaint.ai_confidence * 100) }}%
+                    </small>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light">
+                    <a href="{{ url_for('view_complaint', complaint_id=complaint.id) }}" class="btn btn-sm btn-outline-primary">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h5>No complaints yet</h5>
+        <p>Click the button above to submit your first complaint</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
