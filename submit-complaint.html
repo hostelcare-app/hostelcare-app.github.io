@@ -1,134 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Submit a complaint · Hostel Care</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-<div class="app-shell">
-  <nav class="sidebar" id="sidebar"></nav>
-  <main class="main">
-    <div class="main-header">
-      <div>
-        <h1>Submit a complaint</h1>
-        <p>Describe the issue in your own words — category and priority are detected for you.</p>
-      </div>
-    </div>
+{% extends "base.html" %}
 
-    <div class="panel form-card">
-      <div class="panel-body">
-        <div id="formBanner"></div>
-        <form id="complaintForm" novalidate>
-          <div class="field">
-            <label for="title">Title</label>
-            <input type="text" id="title" placeholder="Short summary, e.g. Leaking tap in room bathroom" required>
-          </div>
-          <div class="field">
-            <label for="description">Description</label>
-            <textarea id="description" placeholder="What's happening, since when, and anything the maintenance team should know." required></textarea>
-          </div>
-          <div class="field">
-            <label for="photo">Photo (optional)</label>
-            <input type="file" id="photo" accept="image/*">
-            <img id="photoPreview" class="photo-preview" alt="Selected photo preview">
-            <div id="visionStatus" class="vision-status"></div>
-          </div>
-          <button type="submit" class="btn btn-primary">Submit complaint</button>
-        </form>
-        <div class="ai-note">
-          <span aria-hidden="true">🤖</span>
-          <div>Hostel Care reads your description (and photo, if you add one) to sort the issue into a category — Plumber, Electrician, Carpenter, Mess, or General — and flag how urgent it is.</div>
+{% block title %}Submit Complaint - Hostel Management{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h3 class="card-title mb-0">📝 Submit a New Complaint</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="title" class="form-label">Complaint Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" placeholder="Brief summary of your issue" required>
+                            <small class="form-text text-muted">Example: Water leak in my room, Broken door lock, etc.</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Detailed Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="6" placeholder="Describe the issue in detail. This will be analyzed by our AI system to automatically categorize and prioritize your complaint." required></textarea>
+                            <small class="form-text text-muted">
+                                💡 Tip: Be specific about the issue. The more details you provide, the better our AI can categorize and prioritize it.
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="image" class="form-label">Photo (optional)</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
+                            <small class="form-text text-muted">
+                                📷 If you attach a photo, our AI looks at it directly to help identify the issue (e.g. a tap, a wifi router, a broken chair).
+                            </small>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>🤖 AI Processing:</strong> Your complaint (and photo, if attached) will be automatically analyzed to:
+                            <ul class="mb-0 mt-2">
+                                <li>Categorize the issue (electrical, plumbing, WiFi, mess, safety, maintenance)</li>
+                                <li>Detect priority level based on urgency indicators</li>
+                                <li>Route to appropriate department</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                                ✅ Submit Complaint
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg">
+                                ← Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </main>
+    
+    <!-- Example Section -->
+    <div class="row mt-5">
+        <div class="col-md-8 offset-md-2">
+            <h5 class="mb-3">📌 Example Complaints (AI will auto-categorize):</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>Electrical Issue:</strong>
+                        <p class="mb-0">"The light bulb in room A101 is broken and the socket is sparking when I try to use it."</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>Safety Issue:</strong>
+                        <p class="mb-0">"An unknown person was seen near the girls' hostel at night. Please increase security patrols."</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>Plumbing Issue:</strong>
+                        <p class="mb-0">"Water is leaking from the ceiling in the third floor bathroom, risking electrical hazard."</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="alert alert-light border">
+                        <strong>WiFi Issue:</strong>
+                        <p class="mb-0">"Internet connection keeps disconnecting every few minutes, making online classes impossible."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-<script src="js/store.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/layout.js"></script>
-<script src="js/classifier.js"></script>
-<script src="js/gemini-vision.js"></script>
-<script>
-  Store.seedIfEmpty();
-  const user = Layout.mount("submit");
-
-  let photoBase64 = "";
-  let photoDataUrl = "";
-  let geminiResult = null; // {category, priority, confidence} from the photo, if Gemini succeeded
-
-  if (user && user.role === "admin") {
-    window.location.href = "dashboard.html";
-  } else if (user) {
-    document.getElementById("photo").addEventListener("change", async function (e) {
-      const file = e.target.files[0];
-      const status = document.getElementById("visionStatus");
-      const preview = document.getElementById("photoPreview");
-      if (!file) return;
-
-      geminiResult = null;
-      status.textContent = "Analyzing photo…";
-      try {
-        const resized = await GeminiVision.resizeImageFile(file, 480, 0.7);
-        photoDataUrl = resized.dataUrl;
-        photoBase64 = GeminiVision.stripDataUrlPrefix(resized.dataUrl);
-        preview.src = photoDataUrl;
-        preview.style.display = "block";
-
-        const title = document.getElementById("title").value.trim();
-        const description = document.getElementById("description").value.trim();
-        geminiResult = await GeminiVision.classify(title, description, photoBase64);
-
-        status.textContent = geminiResult
-          ? "🤖 Photo suggests: " + geminiResult.category + " issue (" + geminiResult.confidence + "% confidence)"
-          : "🤖 Couldn't get a confident read from the photo — your description will be used instead.";
-      } catch (err) {
-        console.warn("Photo analysis failed:", err);
-        status.textContent = "Couldn't analyze the photo (offline, or AI unavailable) — it'll still be attached when you submit.";
-      }
-    });
-
-    document.getElementById("complaintForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const title = document.getElementById("title").value.trim();
-      const description = document.getElementById("description").value.trim();
-      const banner = document.getElementById("formBanner");
-      if (!title || !description) {
-        banner.innerHTML = '<div class="form-banner error">Please add both a title and a description.</div>';
-        return;
-      }
-
-      // Prefer the Gemini result (text + photo together) when we have one;
-      // otherwise fall back to the local keyword classifier (text only).
-      // This keeps the app working even with no internet or no API key.
-      let category, priority, confidence;
-      if (geminiResult) {
-        category = geminiResult.category;
-        priority = geminiResult.priority;
-        confidence = geminiResult.confidence;
-      } else {
-        const result = Classifier.classify(title, description);
-        category = result.category;
-        priority = result.priority;
-        confidence = result.confidence;
-      }
-
-      const complaint = Store.addComplaint({
-        userId: user.id,
-        title: title,
-        description: description,
-        category: category,
-        priority: priority,
-        confidence: confidence,
-        photo: photoDataUrl,
-      });
-      window.location.href = "complaint.html?id=" + complaint.id + "&submitted=1";
-    });
-  }
-</script>
-</body>
-</html>
+{% endblock %}
