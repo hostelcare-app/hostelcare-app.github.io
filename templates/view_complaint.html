@@ -167,6 +167,16 @@
                         </ul>
                     </div>
 
+                    <div class="alert {% if complaint.assigned_worker %}alert-success{% else %}alert-secondary{% endif %}">
+                        <strong>👷 Assigned Worker:</strong>
+                        {% if complaint.assigned_worker %}
+                        {{ complaint.assigned_worker.name }} ({{ complaint.assigned_worker.category }}) —
+                        <a href="tel:{{ complaint.assigned_worker.phone }}">{{ complaint.assigned_worker.phone }}</a>
+                        {% else %}
+                        Not assigned yet
+                        {% endif %}
+                    </div>
+
                     {% if complaint.status == 'resolved' and complaint.resolution_notes %}
                     <hr>
                     <div class="mb-4">
@@ -194,6 +204,34 @@
                                 <option value="in_progress" {% if complaint.status == 'in_progress' %}selected{% endif %}>In Progress</option>
                                 <option value="resolved" {% if complaint.status == 'resolved' %}selected{% endif %}>Resolved</option>
                             </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assigned_worker_id" class="form-label">Assign Worker</label>
+                            <select class="form-select" id="assigned_worker_id" name="assigned_worker_id">
+                                <option value="">— Unassigned —</option>
+                                {% if matching_workers %}
+                                <optgroup label="{{ complaint.category }} (matches this complaint)">
+                                    {% for w in matching_workers %}
+                                    <option value="{{ w.id }}" {% if complaint.assigned_worker_id == w.id %}selected{% endif %}>
+                                        {{ w.name }} — {{ w.phone }}{% if not w.is_available %} (unavailable){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                                {% if other_workers %}
+                                <optgroup label="Other workers">
+                                    {% for w in other_workers %}
+                                    <option value="{{ w.id }}" {% if complaint.assigned_worker_id == w.id %}selected{% endif %}>
+                                        {{ w.name }} — {{ w.category }} — {{ w.phone }}{% if not w.is_available %} (unavailable){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                            </select>
+                            <small class="form-text text-muted">
+                                <a href="{{ url_for('workers') }}">Manage workers →</a>
+                            </small>
                         </div>
 
                         <div class="mb-3">
