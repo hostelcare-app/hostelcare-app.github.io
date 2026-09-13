@@ -11,7 +11,7 @@
                     <h3 class="card-title mb-0">📝 Submit a New Complaint</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    <form method="POST" enctype="multipart/form-data">
                         <div class="mb-4">
                             <label for="title" class="form-label">Complaint Title *</label>
                             <input type="text" class="form-control" id="title" name="title" placeholder="Brief summary of your issue" required>
@@ -25,9 +25,17 @@
                                 💡 Tip: Be specific about the issue. The more details you provide, the better our AI can categorize and prioritize it.
                             </small>
                         </div>
+
+                        <div class="mb-4">
+                            <label for="image" class="form-label">Photo (optional)</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
+                            <small class="form-text text-muted">
+                                📷 If you attach a photo, our AI looks at it directly to help identify the issue (e.g. a tap, a wifi router, a broken chair).
+                            </small>
+                        </div>
                         
                         <div class="alert alert-info">
-                            <strong>🤖 AI Processing:</strong> Your complaint will be automatically analyzed to:
+                            <strong>🤖 AI Processing:</strong> Your complaint (and photo, if attached) will be automatically analyzed to:
                             <ul class="mb-0 mt-2">
                                 <li>Categorize the issue (electrical, plumbing, WiFi, mess, safety, maintenance)</li>
                                 <li>Detect priority level based on urgency indicators</li>

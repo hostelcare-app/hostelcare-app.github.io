@@ -1,20 +1,123 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
 import json
 from ai_classifier import ComplaintClassifier
+
+# --- Gemini (photo + text) classification setup ---------------------------
+# Uses Google's Gemini vision model to look at the actual photo and figure
+# out what the object/issue is (e.g. a tap, a wifi router), instead of the
+# fixed keyword-matching approach. If no API key is set, or the call fails
+# for any reason (no internet, quota, bad response), classify_with_gemini
+# returns None and the app falls back to the local text-only classifier —
+# so the app always keeps working, online or offline.
+from dotenv import load_dotenv
+from google import genai
+from PIL import Image
+
+load_dotenv()
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+_gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+# Stable as of 2026. If this ever stops working, check https://ai.google.dev/gemini-api/docs/models
+# for the current recommended flash-tier model name.
+GEMINI_MODEL = "gemini-2.5-flash"
+
+VALID_CATEGORIES = ["Plumber", "Electrician", "Carpenter", "Mess", "General"]
+VALID_PRIORITIES = ["low", "medium", "high"]
+
+
+def classify_with_gemini(title, description, image_path):
+    """
+    Sends the complaint text (and the photo, if one was uploaded) to
+    Gemini so it can identify the actual object/issue in the photo,
+    rather than being limited to a fixed 1000-class label list.
+    Returns a dict {"category", "priority", "confidence"} on success,
+    or None on any failure (missing key, no internet, bad/unexpected
+    response) so the caller can fall back to the local classifier.
+    """
+    if not _gemini_client:
+        return None
+    try:
+        prompt = (
+            "You are sorting a hostel maintenance complaint into exactly one "
+            "of these five categories (these are worker roles/departments, "
+            "NOT descriptions of the photo's appearance):\n"
+            "- Plumber: water taps, faucets, pipes, leaks, toilets, sinks, showers, drains\n"
+            "- Electrician: wiring, switches, sockets, lights, fans, wifi/router, AC\n"
+            "- Carpenter: furniture, doors, windows, locks, beds, chairs, tables, cupboards\n"
+            "- Mess: the hostel dining hall/canteen — food quality, kitchen hygiene, "
+            "menu, canteen utensils (this is a place name, NOT a description of "
+            "clutter or untidiness — do not pick this just because the photo "
+            "looks messy or has loose wires/pipes)\n"
+            "- General: anything that doesn't clearly fit the above\n"
+            "Also pick an urgency: low, medium, or high.\n"
+            f"Title: {title}\n"
+            f"Description: {description}\n"
+            "If a photo is attached, use it as the main evidence for what "
+            "the object or issue actually is, and use the text for context.\n"
+            "Reply with ONLY a JSON object, no markdown formatting, in "
+            'exactly this shape: {"category": "...", "priority": "...", '
+            '"confidence": 0-100}'
+        )
+
+        contents = [prompt]
+        if image_path and os.path.exists(image_path):
+            contents.append(Image.open(image_path))
+
+        response = _gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=contents,
+        )
+
+        text = (response.text or "").strip()
+        text = text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(text)
+
+        category = data.get("category")
+        if category not in VALID_CATEGORIES:
+            return None
+
+        priority = data.get("priority", "medium")
+        if priority not in VALID_PRIORITIES:
+            priority = "medium"
+
+        confidence = float(data.get("confidence", 70))
+        confidence = max(0.0, min(confidence, 100.0))
+
+        return {"category": category, "priority": priority, "confidence": confidence}
+    except Exception as e:
+        print("Gemini classification failed, falling back to local classifier:", e)
+        return None
+
+
+# ---------------------------------------------------------------------------
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hostel_complaints.db'
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Image upload settings
+app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 db = SQLAlchemy(app)
 
-# Load AI classifier
+# Load AI classifier (text-only fallback)
 classifier = ComplaintClassifier()
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # Database Models
 class User(db.Model):
@@ -26,6 +129,15 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True)
     room_number = db.Column(db.String(20))
     complaints = db.relationship('Complaint', backref='author', lazy=True)
+
+class Worker(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    category = db.Column(db.String(50), nullable=False)  # Plumber, Electrician, Carpenter, Mess, General
+    is_available = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    assigned_complaints = db.relationship('Complaint', backref='assigned_worker', lazy=True)
 
 class Complaint(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -39,6 +151,8 @@ class Complaint(db.Model):
     resolved_at = db.Column(db.DateTime)
     resolution_notes = db.Column(db.Text)
     ai_confidence = db.Column(db.Float)  # AI model confidence score
+    image_filename = db.Column(db.String(255))  # optional attached photo
+    assigned_worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'))
 
 # Routes
 @app.route('/')
@@ -129,8 +243,30 @@ def submit_complaint():
         title = request.form.get('title')
         description = request.form.get('description')
 
-        # AI Classification
-        category, priority, confidence = classifier.predict(description)
+        # Handle optional image upload FIRST, so Gemini has a file path to
+        # look at when classifying.
+        image_filename = None
+        image_path = None
+        image_file = request.files.get('image')
+        if image_file and image_file.filename and allowed_file(image_file.filename):
+            filename = secure_filename(image_file.filename)
+            # prefix with timestamp to avoid overwriting files with the same name
+            unique_filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            image_file.save(image_path)
+            image_filename = unique_filename
+
+        # Prefer Gemini (text + photo together) when it's available and
+        # returns a usable result; otherwise fall back to the local
+        # keyword classifier (text only). This keeps the app working even
+        # with no internet or no API key configured.
+        gemini_result = classify_with_gemini(title, description, image_path)
+        if gemini_result:
+            category = gemini_result['category']
+            priority = gemini_result['priority']
+            confidence = gemini_result['confidence']
+        else:
+            category, priority, confidence = classifier.predict(description)
 
         complaint = Complaint(
             user_id=session['user_id'],
@@ -138,7 +274,8 @@ def submit_complaint():
             description=description,
             category=category,
             priority=priority,
-            ai_confidence=confidence
+            ai_confidence=confidence,
+            image_filename=image_filename
         )
 
         db.session.add(complaint)
@@ -163,16 +300,88 @@ def view_complaint(complaint_id):
     if request.method == 'POST' and user.role in ['admin', 'warden']:
         status = request.form.get('status')
         resolution_notes = request.form.get('resolution_notes')
+        assigned_worker_id = request.form.get('assigned_worker_id')
 
         complaint.status = status
         complaint.resolution_notes = resolution_notes
+        if assigned_worker_id:
+            complaint.assigned_worker_id = int(assigned_worker_id)
+            # Assigning a worker automatically moves an open complaint along
+            if complaint.status == 'open':
+                complaint.status = 'in_progress'
+        elif assigned_worker_id == '':
+            complaint.assigned_worker_id = None
         if status == 'resolved':
             complaint.resolved_at = datetime.utcnow()
 
         db.session.commit()
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('view_complaint', complaint_id=complaint.id))
 
-    return render_template('view_complaint.html', complaint=complaint, user=user, now=datetime.utcnow())
+    # Workers matching this complaint's category are shown first, so the
+    # admin sees the most relevant contacts without having to search.
+    matching_workers = Worker.query.filter_by(category=complaint.category).order_by(Worker.name).all()
+    other_workers = Worker.query.filter(Worker.category != complaint.category).order_by(Worker.category, Worker.name).all()
+
+    return render_template(
+        'view_complaint.html',
+        complaint=complaint,
+        user=user,
+        now=datetime.utcnow(),
+        matching_workers=matching_workers,
+        other_workers=other_workers,
+    )
+
+@app.route('/workers', methods=['GET', 'POST'])
+def workers():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if user.role not in ['admin', 'warden']:
+        return "Unauthorized", 403
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        category = request.form.get('category')
+
+        if name and phone and category in VALID_CATEGORIES:
+            worker = Worker(name=name, phone=phone, category=category)
+            db.session.add(worker)
+            db.session.commit()
+
+        return redirect(url_for('workers'))
+
+    all_workers = Worker.query.order_by(Worker.category, Worker.name).all()
+    return render_template('workers.html', workers=all_workers, user=user, categories=VALID_CATEGORIES)
+
+@app.route('/workers/<int:worker_id>/delete', methods=['POST'])
+def delete_worker(worker_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if user.role not in ['admin', 'warden']:
+        return "Unauthorized", 403
+
+    worker = Worker.query.get_or_404(worker_id)
+    db.session.delete(worker)
+    db.session.commit()
+    return redirect(url_for('workers'))
+
+@app.route('/workers/<int:worker_id>/toggle', methods=['POST'])
+def toggle_worker_availability(worker_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if user.role not in ['admin', 'warden']:
+        return "Unauthorized", 403
+
+    worker = Worker.query.get_or_404(worker_id)
+    worker.is_available = not worker.is_available
+    db.session.commit()
+    return redirect(url_for('workers'))
 
 @app.route('/api/stats')
 def api_stats():
@@ -220,8 +429,22 @@ def init_db():
             )
             db.session.add(admin)
 
+        # Seed a few sample workers per category, only if none exist yet,
+        # so the assignment feature has something to demo right away.
+        if Worker.query.count() == 0:
+            sample_workers = [
+                Worker(name='Ramesh Yadav', phone='9876543210', category='Plumber'),
+                Worker(name='Suresh Kumar', phone='9876543211', category='Electrician'),
+                Worker(name='Dinesh Singh', phone='9876543212', category='Carpenter'),
+                Worker(name='Kamla Devi', phone='9876543213', category='Mess'),
+                Worker(name='Office Staff', phone='9876543214', category='General'),
+            ]
+            db.session.add_all(sample_workers)
+
         db.session.commit()
 
+
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, port=5000)
