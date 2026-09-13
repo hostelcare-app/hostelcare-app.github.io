@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in · Hostel Care</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E2761">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-form-side">
+    <div class="auth-panel">
+      <a class="brand-mark" href="index.html"><span class="brand-dot"></span>Hostel Care</a>
+
+      <h1>Welcome back</h1>
+      <p class="lede">Log in to report an issue or check on one you've already filed.</p>
+
+      <div id="formBanner"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Log in</button>
+      </form>
+
+      <p class="auth-switch">New here? <a href="register.html">Create a student account</a></p>
+
+      <div class="demo-box">
+        <strong>Trying this out?</strong> Use <code>student1</code> / <code>password123</code> for a student view, or <code>admin</code> / <code>admin123</code> for the warden view.
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-visual-side">
+    <div class="auth-visual-inner">
+      <p class="eyebrow-line">Hostel Care</p>
+      <h2>AI-powered issue management for student hostels</h2>
+      <p>Report a maintenance problem, get it sorted into the right category and priority automatically, and follow it through to resolution.</p>
+
+      <svg class="building-illustration" viewBox="0 0 360 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a hostel building at night with some windows lit">
+        <line class="bld-ground" x1="30" y1="365" x2="330" y2="365"/>
+        <rect class="bld-outline" x="150" y="30" width="60" height="24" rx="4"/>
+        <line class="bld-outline" x1="156" y1="54" x2="156" y2="70"/>
+        <line class="bld-outline" x1="204" y1="54" x2="204" y2="70"/>
+        <rect class="bld-outline" x="55" y="66" width="210" height="6" rx="3"/>
+        <rect class="bld-outline" x="60" y="70" width="200" height="290" rx="6"/>
+        <rect class="bld-win" x="74.0" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="213.5" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="74.0" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="167.0" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="74.0" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="167.0" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="74.0" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="213.5" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="74.0" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="120.5" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="74.0" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-outline" x="138" y="304" width="44" height="56" rx="3"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  Store.seedIfEmpty();
+  if (Store.getCurrentUser()) window.location.href = "dashboard.html";
+
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    const result = Auth.login(username, password);
+    const banner = document.getElementById("formBanner");
+    if (result.ok) {
+      window.location.href = "dashboard.html";
+    } else {
+      banner.innerHTML = '<div class="form-banner error">' + result.error + "</div>";
+    }
+  });
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
+</script>
+</body>
+</html>

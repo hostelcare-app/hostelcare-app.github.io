@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complaint · Hostel Care</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E2761">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="main" id="mainContent">
+    <!-- filled by script -->
+  </main>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  Store.seedIfEmpty();
+  const user = Layout.mount("dashboard");
+
+  function statusLabel(s) { return { open: "Open", in_progress: "In progress", resolved: "Resolved" }[s] || s; }
+  function priorityLabel(p) { return { high: "High", medium: "Medium", low: "Low" }[p] || p; }
+  function formatDate(iso) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  if (user) {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const justSubmitted = params.get("submitted") === "1";
+    const complaint = Store.getComplaintById(id);
+    const main = document.getElementById("mainContent");
+
+    if (!complaint) {
+      main.innerHTML =
+        '<div class="panel detail-card"><div class="unauthorized"><h3>Complaint not found</h3><p>It may have been removed.</p>' +
+        '<a class="btn btn-secondary" href="dashboard.html">Back to dashboard</a></div></div>';
+    } else if (user.role === "student" && complaint.userId !== user.id) {
+      main.innerHTML =
+        '<div class="panel detail-card"><div class="unauthorized"><h3>Unauthorized</h3><p>This complaint belongs to another student.</p>' +
+        '<a class="btn btn-secondary" href="dashboard.html">Back to dashboard</a></div></div>';
+    } else {
+      const owner = Store.getUsers().find((u) => u.id === complaint.userId);
+      const isAdmin = user.role === "admin";
+
+      let html = "";
+      html += '<div class="main-header"><div><p style="margin-bottom:0.3em;"><a href="dashboard.html">&larr; Back to dashboard</a></p></div></div>';
+      html += '<div class="panel detail-card"><div class="panel-body">';
+
+      if (justSubmitted) {
+        html +=
+          '<div class="form-banner success">Complaint filed as ' + complaint.ticketNo +
+          " — sorted as <strong>" + complaint.category + "</strong>, " + priorityLabel(complaint.priority).toLowerCase() +
+          " priority.</div>";
+      }
+
+      html += '<div class="detail-top"><div><p class="ticket-no" style="margin-bottom:0.3em;">' + complaint.ticketNo + '</p><h1>' + Layout.escapeHtml(complaint.title) + "</h1></div></div>";
+
+      html += '<div class="pill-row">' +
+        '<span class="pill pill-category">' + complaint.category + '</span>' +
+        '<span class="pill pill-' + complaint.priority + '">' + priorityLabel(complaint.priority) + ' priority</span>' +
+        '<span class="pill pill-' + complaint.status + '">' + statusLabel(complaint.status) + '</span>' +
+        "</div>";
+
+      html += '<div class="detail-meta">';
+      html += '<div><div class="k">Filed by</div><div class="v">' + Layout.escapeHtml(owner ? owner.name : "Unknown") + "</div></div>";
+      html += '<div><div class="k">Room</div><div class="v">' + Layout.escapeHtml(owner && owner.roomNumber ? owner.roomNumber : "—") + "</div></div>";
+      html += '<div><div class="k">Filed on</div><div class="v">' + formatDate(complaint.createdAt) + "</div></div>";
+      html += '<div><div class="k">Assigned to</div><div class="v">' + Layout.escapeHtml(complaint.assignedWorker || "Not yet assigned") + "</div></div>";
+      html += "</div>";
+
+      html += '<h3 style="font-size:1rem;margin-bottom:0.5em;">Description</h3><p class="description-block">' + Layout.escapeHtml(complaint.description) + "</p>";
+
+      if (complaint.photo) {
+        html += '<h3 style="font-size:1rem;margin-bottom:0.5em;">Photo evidence</h3>';
+        html += '<img src="' + complaint.photo + '" class="photo-evidence" alt="Photo attached to complaint">';
+        if (complaint.photoLabel) {
+          html += '<p class="field-hint">🤖 Photo analysis detected: ' + Layout.escapeHtml(complaint.photoLabel) + " (" + complaint.photoConfidence + "% match)</p>";
+        }
+      }
+
+      html += '<h3 style="font-size:1rem;margin-bottom:0.3em;margin-top:1.2em;">AI classification confidence</h3>';
+      html += '<div class="confidence-bar"><span style="width:' + complaint.confidence + '%"></span></div>';
+      html += '<p class="field-hint">' + complaint.confidence + "% confident in this category and priority.</p>";
+
+      if (complaint.status === "resolved") {
+        html += '<hr class="divider"><h3 style="font-size:1rem;margin-bottom:0.3em;">Resolution</h3>';
+        html += '<p class="field-hint" style="margin-bottom:0.5em;">Resolved on ' + formatDate(complaint.resolvedAt) + "</p>";
+        html += '<p class="description-block">' + Layout.escapeHtml(complaint.resolutionNotes || "No notes were added.") + "</p>";
+
+        // Feedback: students rate how the resolution went; admins just see it.
+        if (!isAdmin) {
+          if (complaint.rating) {
+            html += '<hr class="divider"><h3 style="font-size:1rem;margin-bottom:0.5em;">Your feedback</h3>';
+            html += '<div class="star-display">' + "★".repeat(complaint.rating) + "☆".repeat(5 - complaint.rating) + "</div>";
+            if (complaint.feedbackComment) {
+              html += '<p class="description-block" style="margin-top:0.5em;">' + Layout.escapeHtml(complaint.feedbackComment) + "</p>";
+            }
+          } else {
+            html += '<hr class="divider"><h3 style="font-size:1rem;margin-bottom:0.5em;">Rate this resolution</h3>';
+            html += '<div id="starPicker" class="star-picker">' +
+              [1, 2, 3, 4, 5].map((n) => '<span class="star" data-value="' + n + '">☆</span>').join("") +
+              "</div>";
+            html += '<div class="field" style="margin-top:0.8em;"><textarea id="feedbackComment" placeholder="Anything you\'d like to add (optional)"></textarea></div>';
+            html += '<button type="button" id="submitFeedbackBtn" class="btn btn-primary" disabled>Submit feedback</button>';
+          }
+        } else if (complaint.rating) {
+          html += '<hr class="divider"><h3 style="font-size:1rem;margin-bottom:0.5em;">Student feedback</h3>';
+          html += '<div class="star-display">' + "★".repeat(complaint.rating) + "☆".repeat(5 - complaint.rating) + "</div>";
+          if (complaint.feedbackComment) {
+            html += '<p class="description-block" style="margin-top:0.5em;">' + Layout.escapeHtml(complaint.feedbackComment) + "</p>";
+          }
+        }
+      }
+
+      if (isAdmin) {
+        const suggestedWorker = complaint.assignedWorker || Store.suggestWorkerForCategory(complaint.category);
+        html += '<hr class="divider"><h3 style="font-size:1rem;margin-bottom:0.8em;">Manage this ticket</h3>';
+        html += '<form id="manageForm">';
+        html += '<div class="field-row">';
+        html += '<div class="field"><label for="statusSelect">Status</label><select id="statusSelect">' +
+          ["open", "in_progress", "resolved"].map((s) => '<option value="' + s + '"' + (s === complaint.status ? " selected" : "") + '>' + statusLabel(s) + "</option>").join("") +
+          "</select></div>";
+        html += '<div class="field"><label for="workerSelect">Assign worker</label><select id="workerSelect"><option value="">Not assigned</option>' +
+          Store.WORKERS.map((w) => '<option value="' + w + '"' + (w === suggestedWorker ? " selected" : "") + '>' + w + "</option>").join("") +
+          "</select>" +
+          (!complaint.assignedWorker ? '<p class="field-hint">🤖 AI-suggested based on category — change if needed.</p>' : "") +
+          "</div>";
+        html += "</div>";
+        html += '<div class="field"><label for="notesInput">Resolution notes</label><textarea id="notesInput" placeholder="What was done to fix this?">' + Layout.escapeHtml(complaint.resolutionNotes || "") + "</textarea></div>";
+        html += '<div class="field-row" style="align-items:center;">';
+        html += '<button type="submit" class="btn btn-primary">Save changes</button>';
+        html += '<button type="button" id="deleteBtn" class="btn btn-danger-text" style="margin-left:auto;">Delete ticket</button>';
+        html += "</div>";
+        html += "</form>";
+      }
+
+      html += "</div></div>";
+      main.innerHTML = html;
+
+      if (isAdmin) {
+        document.getElementById("manageForm").addEventListener("submit", function (e) {
+          e.preventDefault();
+          const status = document.getElementById("statusSelect").value;
+          const assignedWorker = document.getElementById("workerSelect").value;
+          const resolutionNotes = document.getElementById("notesInput").value.trim();
+          const patch = { status: status, assignedWorker: assignedWorker, resolutionNotes: resolutionNotes };
+          if (status === "resolved" && complaint.status !== "resolved") {
+            patch.resolvedAt = new Date().toISOString();
+          }
+          if (status !== "resolved") {
+            patch.resolvedAt = null;
+          }
+          Store.updateComplaint(complaint.id, patch);
+          window.location.href = "complaint.html?id=" + complaint.id;
+        });
+
+        document.getElementById("deleteBtn").addEventListener("click", function () {
+          if (window.confirm("Delete ticket " + complaint.ticketNo + "? This can't be undone.")) {
+            Store.deleteComplaint(complaint.id);
+            window.location.href = "dashboard.html";
+          }
+        });
+      }
+
+      const starPicker = document.getElementById("starPicker");
+      if (starPicker) {
+        let selectedRating = 0;
+        const stars = starPicker.querySelectorAll(".star");
+        const submitBtn = document.getElementById("submitFeedbackBtn");
+
+        function paintStars(value) {
+          stars.forEach(function (s) {
+            s.textContent = Number(s.dataset.value) <= value ? "★" : "☆";
+          });
+        }
+
+        stars.forEach(function (s) {
+          s.addEventListener("click", function () {
+            selectedRating = Number(s.dataset.value);
+            paintStars(selectedRating);
+            submitBtn.disabled = false;
+          });
+        });
+
+        submitBtn.addEventListener("click", function () {
+          if (!selectedRating) return;
+          const comment = document.getElementById("feedbackComment").value.trim();
+          Store.submitFeedback(complaint.id, selectedRating, comment);
+          window.location.href = "complaint.html?id=" + complaint.id;
+        });
+      }
+    }
+  }
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Hostel Complaint Management{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="card">
+        <div class="card-body p-5">
+            <h2 class="card-title text-center mb-4">🔐 Login</h2>
+            
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                    <small class="form-text text-muted">Demo: student1 or admin</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <small class="form-text text-muted">Demo: password123 or admin123</small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+            </form>
+            
+            <hr>
+            
+            <p class="text-center mb-0">
+                Don't have an account? <a href="{{ url_for('register') }}" class="text-decoration-none">Register here</a>
+            </p>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-3" role="alert">
+        <strong>Demo Credentials:</strong><br>
+        <strong>Student:</strong> username: student1 | password: password123<br>
+        <strong>Admin:</strong> username: admin | password: admin123
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit a complaint · Hostel Care</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="main">
+    <div class="main-header">
+      <div>
+        <h1>Submit a complaint</h1>
+        <p>Describe the issue in your own words — category and priority are detected for you.</p>
+      </div>
+    </div>
+
+    <div class="panel form-card">
+      <div class="panel-body">
+        <div id="formBanner"></div>
+        <form id="complaintForm" novalidate>
+          <div class="field">
+            <label for="title">Title</label>
+            <input type="text" id="title" placeholder="Short summary, e.g. Leaking tap in room bathroom" required>
+          </div>
+          <div class="field">
+            <label for="description">Description</label>
+            <textarea id="description" placeholder="What's happening, since when, and anything the maintenance team should know." required></textarea>
+          </div>
+          <div class="field">
+            <label for="photo">Photo (optional)</label>
+            <input type="file" id="photo" accept="image/*">
+            <img id="photoPreview" class="photo-preview" alt="Selected photo preview">
+            <div id="visionStatus" class="vision-status"></div>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit complaint</button>
+        </form>
+        <div class="ai-note">
+          <span aria-hidden="true">🤖</span>
+          <div>Hostel Care reads your description (and photo, if you add one) to sort the issue into a category — Plumber, Electrician, Carpenter, Mess, or General — and flag how urgent it is.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/classifier.js"></script>
+<script src="js/gemini-vision.js"></script>
+<script>
+  Store.seedIfEmpty();
+  const user = Layout.mount("submit");
+
+  let photoBase64 = "";
+  let photoDataUrl = "";
+  let geminiResult = null; // {category, priority, confidence} from the photo, if Gemini succeeded
+
+  if (user && user.role === "admin") {
+    window.location.href = "dashboard.html";
+  } else if (user) {
+    document.getElementById("photo").addEventListener("change", async function (e) {
+      const file = e.target.files[0];
+      const status = document.getElementById("visionStatus");
+      const preview = document.getElementById("photoPreview");
+      if (!file) return;
+
+      geminiResult = null;
+      status.textContent = "Analyzing photo…";
+      try {
+        const resized = await GeminiVision.resizeImageFile(file, 480, 0.7);
+        photoDataUrl = resized.dataUrl;
+        photoBase64 = GeminiVision.stripDataUrlPrefix(resized.dataUrl);
+        preview.src = photoDataUrl;
+        preview.style.display = "block";
+
+        const title = document.getElementById("title").value.trim();
+        const description = document.getElementById("description").value.trim();
+        geminiResult = await GeminiVision.classify(title, description, photoBase64);
+
+        status.textContent = geminiResult
+          ? "🤖 Photo suggests: " + geminiResult.category + " issue (" + geminiResult.confidence + "% confidence)"
+          : "🤖 Couldn't get a confident read from the photo — your description will be used instead.";
+      } catch (err) {
+        console.warn("Photo analysis failed:", err);
+        status.textContent = "Couldn't analyze the photo (offline, or AI unavailable) — it'll still be attached when you submit.";
+      }
+    });
+
+    document.getElementById("complaintForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const title = document.getElementById("title").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const banner = document.getElementById("formBanner");
+      if (!title || !description) {
+        banner.innerHTML = '<div class="form-banner error">Please add both a title and a description.</div>';
+        return;
+      }
+
+      // Prefer the Gemini result (text + photo together) when we have one;
+      // otherwise fall back to the local keyword classifier (text only).
+      // This keeps the app working even with no internet or no API key.
+      let category, priority, confidence;
+      if (geminiResult) {
+        category = geminiResult.category;
+        priority = geminiResult.priority;
+        confidence = geminiResult.confidence;
+      } else {
+        const result = Classifier.classify(title, description);
+        category = result.category;
+        priority = result.priority;
+        confidence = result.confidence;
+      }
+
+      const complaint = Store.addComplaint({
+        userId: user.id,
+        title: title,
+        description: description,
+        category: category,
+        priority: priority,
+        confidence: confidence,
+        photo: photoDataUrl,
+      });
+      window.location.href = "complaint.html?id=" + complaint.id + "&submitted=1";
+    });
+  }
+</script>
+</body>
+</html>

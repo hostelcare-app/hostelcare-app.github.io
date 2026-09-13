@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Complaint Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">📊 Admin Dashboard</h1>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Complaints</h6>
+                    <h2>{{ stats.total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">High Priority</h6>
+                    <h2>{{ stats.high_priority }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">In Progress</h6>
+                    <h2>{{ stats.in_progress }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Resolved</h6>
+                    <h2>{{ stats.resolved }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Charts -->
+    <div class="row mb-4">
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">Complaints by Category</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">Complaints by Priority</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="priorityChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complaints Table -->
+    <div class="card">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h5 class="mb-0">All Complaints</h5>
+            <div class="d-flex gap-2">
+                <select id="categoryFilter" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                </select>
+                <select id="statusFilter" class="form-select form-select-sm">
+                    <option value="">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="complaintsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Student</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for complaint in complaints %}
+                        <tr data-category="{{ complaint.category }}" data-status="{{ complaint.status }}">
+                            <td>#{{ complaint.id }}</td>
+                            <td>{{ complaint.author.name }}</td>
+                            <td>{{ complaint.title }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ complaint.category }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span>
+                            </td>
+                            <td>
+                                <span class="status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span>
+                            </td>
+                            <td><small>{{ complaint.created_at.strftime('%d %b %Y') }}</small></td>
+                            <td>
+                                <a href="{{ url_for('view_complaint', complaint_id=complaint.id) }}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Fetch stats and draw charts
+    fetch("{{ url_for('api_stats') }}")
+        .then(res => res.json())
+        .then(data => {
+            const catLabels = Object.keys(data.categories);
+            const catValues = Object.values(data.categories);
+
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'bar',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        label: 'Complaints',
+                        data: catValues,
+                        backgroundColor: '#3498db'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+
+            const prioLabels = Object.keys(data.priorities);
+            const prioValues = Object.values(data.priorities);
+            const prioColors = prioLabels.map(p =>
+                p === 'high' ? '#e74c3c' : p === 'medium' ? '#f39c12' : '#95a5a6'
+            );
+
+            new Chart(document.getElementById('priorityChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: prioLabels,
+                    datasets: [{
+                        data: prioValues,
+                        backgroundColor: prioColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Populate category filter dropdown
+            const categoryFilter = document.getElementById('categoryFilter');
+            catLabels.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categoryFilter.appendChild(opt);
+            });
+        });
+
+    // Client-side table filtering
+    function applyFilters() {
+        const category = document.getElementById('categoryFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const rows = document.querySelectorAll('#complaintsTable tbody tr');
+
+        rows.forEach(row => {
+            const matchCategory = !category || row.dataset.category === category;
+            const matchStatus = !status || row.dataset.status === status;
+            row.style.display = (matchCategory && matchStatus) ? '' : 'none';
+        });
+    }
+
+    document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Hostel Care</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E2761">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="main">
+    <div class="main-header">
+      <div>
+        <div class="title-row">
+          <h1 id="pageTitle">Dashboard</h1>
+          <span class="pill pill-admin" id="adminBadge" style="display:none;">Warden Access</span>
+        </div>
+        <p id="pageSubtitle"></p>
+      </div>
+      <a href="submit-complaint.html" class="btn btn-primary" id="newComplaintBtn">Submit a complaint</a>
+    </div>
+
+    <div class="stat-row" id="statRow"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2 id="panelTitle">Complaints</h2>
+        <select id="statusFilter" style="display:none">
+          <option value="all">All statuses</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In progress</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  Store.seedIfEmpty();
+  const user = Layout.mount("dashboard");
+  if (user) {
+    const isAdmin = user.role === "admin";
+    document.getElementById("pageTitle").textContent = isAdmin ? "Admin dashboard" : "Hi, " + user.name.split(" ")[0];
+    document.getElementById("pageSubtitle").textContent = isAdmin
+      ? "Every complaint filed across the hostel — resolve them here."
+      : "Here's what's happening with the issues you've reported.";
+    document.getElementById("panelTitle").textContent = isAdmin ? "All complaints" : "Your complaints";
+
+    if (isAdmin) {
+      document.getElementById("newComplaintBtn").style.display = "none";
+      document.getElementById("adminBadge").style.display = "inline-flex";
+    }
+
+    const statusFilter = document.getElementById("statusFilter");
+    if (isAdmin) statusFilter.style.display = "inline-block";
+
+    function statusLabel(s) {
+      return { open: "Open", in_progress: "In progress", resolved: "Resolved" }[s] || s;
+    }
+    function priorityLabel(p) {
+      return { high: "High", medium: "Medium", low: "Low" }[p] || p;
+    }
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    }
+
+    function allComplaints() {
+      const list = Store.getComplaints();
+      const scoped = isAdmin ? list : list.filter((c) => c.userId === user.id);
+      return scoped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    function renderStats(list) {
+      const total = list.length;
+      const open = list.filter((c) => c.status === "open").length;
+      const inProgress = list.filter((c) => c.status === "in_progress").length;
+      const resolved = list.filter((c) => c.status === "resolved").length;
+      const cards = [
+        { num: total, label: "Total" },
+        { num: open, label: "Open" },
+        { num: inProgress, label: "In progress" },
+        { num: resolved, label: "Resolved" },
+      ];
+      if (isAdmin) {
+        cards.push({ num: list.filter((c) => c.priority === "high").length, label: "High priority" });
+      }
+      document.getElementById("statRow").innerHTML = cards
+        .map((c) => '<div class="stat-card"><div class="num">' + c.num + '</div><div class="label">' + c.label + "</div></div>")
+        .join("");
+    }
+
+    function renderTable() {
+      const filterVal = statusFilter.value;
+      let list = allComplaints();
+      if (isAdmin && filterVal !== "all") list = list.filter((c) => c.status === filterVal);
+      renderStats(allComplaints());
+
+      const wrap = document.getElementById("tableWrap");
+      if (list.length === 0) {
+        wrap.innerHTML =
+          '<div class="empty-state"><h3>No complaints yet</h3><p>' +
+          (isAdmin ? "Nothing has been filed yet." : "Report a maintenance issue and it'll show up here.") +
+          "</p></div>";
+        return;
+      }
+
+      const rows = list
+        .map(function (c) {
+          const studentCell = isAdmin
+            ? (function () {
+                const u = Store.getUsers().find((x) => x.id === c.userId);
+                return (
+                  '<td><div>' + Layout.escapeHtml(u ? u.name : "Unknown") + "</div>" +
+                  '<div class="ticket-meta">' + Layout.escapeHtml(u && u.roomNumber ? "Room " + u.roomNumber : "") + "</div></td>"
+                );
+              })()
+            : "";
+          return (
+            "<tr>" +
+            '<td class="ticket-no">' + c.ticketNo + "</td>" +
+            '<td class="ticket-title-cell"><a href="complaint.html?id=' + c.id + '">' + Layout.escapeHtml(c.title) + "</a>" +
+            (c.photo ? ' <span title="Photo attached">📷</span>' : "") + "</td>" +
+            studentCell +
+            '<td><span class="pill pill-category">' + c.category + "</span></td>" +
+            '<td><span class="pill pill-' + c.priority + '">' + priorityLabel(c.priority) + "</span></td>" +
+            '<td><span class="pill pill-' + c.status + '">' + statusLabel(c.status) + "</span></td>" +
+            "<td>" + formatDate(c.createdAt) + "</td>" +
+            "</tr>"
+          );
+        })
+        .join("");
+
+      wrap.innerHTML =
+        '<table class="ticket-table"><thead><tr>' +
+        "<th>Ticket</th><th>Issue</th>" +
+        (isAdmin ? "<th>Student</th>" : "") +
+        "<th>Category</th><th>Priority</th><th>Status</th><th>Filed</th>" +
+        "</tr></thead><tbody>" + rows + "</tbody></table>";
+    }
+
+    statusFilter.addEventListener("change", renderTable);
+    renderTable();
+  }
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
+</script>
+</body>
+</html>

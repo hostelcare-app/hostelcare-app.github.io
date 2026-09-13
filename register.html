@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create account · Hostel Care</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E2761">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-form-side">
+    <div class="auth-panel">
+      <a class="brand-mark" href="index.html"><span class="brand-dot"></span>Hostel Care</a>
+
+      <h1>Create your account</h1>
+      <p class="lede">Register with your room details so complaints reach the right place.</p>
+
+      <div id="formBanner"></div>
+
+      <form id="registerForm" novalidate>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" autocomplete="name" required>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="roomNumber">Room number</label>
+            <input type="text" id="roomNumber" name="roomNumber" placeholder="e.g. B204" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      </form>
+
+      <p class="auth-switch">Already registered? <a href="index.html">Log in</a></p>
+    </div>
+  </div>
+
+  <div class="auth-visual-side">
+    <div class="auth-visual-inner">
+      <p class="eyebrow-line">Hostel Care</p>
+      <h2>One account, every complaint tracked</h2>
+      <p>Once you're registered, every issue you report stays linked to your room and visible to you until it's resolved.</p>
+
+      <svg class="building-illustration" viewBox="0 0 360 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a hostel building at night with some windows lit">
+        <line class="bld-ground" x1="30" y1="365" x2="330" y2="365"/>
+        <rect class="bld-outline" x="150" y="30" width="60" height="24" rx="4"/>
+        <line class="bld-outline" x1="156" y1="54" x2="156" y2="70"/>
+        <line class="bld-outline" x1="204" y1="54" x2="204" y2="70"/>
+        <rect class="bld-outline" x="55" y="66" width="210" height="6" rx="3"/>
+        <rect class="bld-outline" x="60" y="70" width="200" height="290" rx="6"/>
+        <rect class="bld-win-lit" x="74.0" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="84.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="74.0" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="120.5" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="213.5" y="130.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="74.0" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="176.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="74.0" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="167.0" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="222.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="74.0" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="213.5" y="268.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win-lit" x="74.0" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="120.5" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="167.0" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-win" x="213.5" y="314.0" width="32.5" height="32.0" rx="2"/>
+        <rect class="bld-outline" x="138" y="304" width="44" height="56" rx="3"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  Store.seedIfEmpty();
+  if (Store.getCurrentUser()) window.location.href = "dashboard.html";
+
+  document.getElementById("registerForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const fields = {
+      name: document.getElementById("name").value.trim(),
+      username: document.getElementById("username").value.trim(),
+      roomNumber: document.getElementById("roomNumber").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      password: document.getElementById("password").value,
+    };
+    const banner = document.getElementById("formBanner");
+    if (!fields.name || !fields.username || !fields.email || !fields.password) {
+      banner.innerHTML = '<div class="form-banner error">Please fill in every field.</div>';
+      return;
+    }
+    const result = Auth.register(fields);
+    if (result.ok) {
+      Store.setSession(result.user.id);
+      window.location.href = "dashboard.html";
+    } else {
+      banner.innerHTML = '<div class="form-banner error">' + result.error + "</div>";
+    }
+  });
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
+</script>
+</body>
+</html>

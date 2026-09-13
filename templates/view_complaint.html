@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Complaint #{{ complaint.id }} - Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin: 20px 0 10px;
+    }
+
+    .timeline-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+
+    .timeline-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        color: #888;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        font-weight: 700;
+        border: 3px solid #e0e0e0;
+        transition: all 0.3s;
+    }
+
+    .timeline-step.done .timeline-circle {
+        background: var(--success-color);
+        border-color: var(--success-color);
+        color: #fff;
+    }
+
+    .timeline-step.current .timeline-circle {
+        background: var(--warning-color);
+        border-color: var(--warning-color);
+        color: #fff;
+    }
+
+    .timeline-line {
+        position: absolute;
+        top: 20px;
+        left: -50%;
+        width: 100%;
+        height: 3px;
+        background: #e0e0e0;
+        z-index: -1;
+    }
+
+    .timeline-step:first-child .timeline-line {
+        display: none;
+    }
+
+    .timeline-step.done .timeline-line,
+    .timeline-step.current .timeline-line {
+        background: var(--success-color);
+    }
+
+    .timeline-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .timeline-date {
+        font-size: 0.75rem;
+        color: #888;
+    }
+
+    .complaint-image {
+        max-width: 100%;
+        border-radius: 10px;
+        margin-top: 10px;
+        cursor: pointer;
+        border: 1px solid #eee;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h3 class="mb-2">{{ complaint.title }}</h3>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-info">{{ complaint.category }}</span>
+                        <span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span>
+                        <span class="status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Status Timeline -->
+                    <div class="timeline">
+                        <div class="timeline-step done">
+                            <div class="timeline-line"></div>
+                            <div class="timeline-circle">✓</div>
+                            <div class="timeline-label">Submitted</div>
+                            <div class="timeline-date">{{ complaint.created_at.strftime('%d %b, %H:%M') }}</div>
+                        </div>
+                        <div class="timeline-step {% if complaint.status in ['in_progress', 'resolved'] %}done{% endif %} {% if complaint.status == 'open' %}current{% endif %}">
+                            <div class="timeline-line"></div>
+                            <div class="timeline-circle">
+                                {% if complaint.status in ['in_progress', 'resolved'] %}✓{% else %}2{% endif %}
+                            </div>
+                            <div class="timeline-label">In Progress</div>
+                            <div class="timeline-date">
+                                {% if complaint.status == 'open' %}Pending{% endif %}
+                            </div>
+                        </div>
+                        <div class="timeline-step {% if complaint.status == 'resolved' %}done{% elif complaint.status == 'in_progress' %}current{% endif %}">
+                            <div class="timeline-line"></div>
+                            <div class="timeline-circle">
+                                {% if complaint.status == 'resolved' %}✓{% else %}3{% endif %}
+                            </div>
+                            <div class="timeline-label">Resolved</div>
+                            <div class="timeline-date">
+                                {% if complaint.resolved_at %}{{ complaint.resolved_at.strftime('%d %b, %H:%M') }}{% else %}Pending{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4 mt-4">
+                        <div class="col-md-6">
+                            <p><strong>Submitted By:</strong> {{ complaint.author.name }}</p>
+                            <p><strong>Room Number:</strong> {{ complaint.author.room_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Submitted On:</strong> {{ complaint.created_at.strftime('%d %B %Y, %H:%M') }}</p>
+                            {% if complaint.resolved_at %}
+                            <p><strong>Resolved On:</strong> {{ complaint.resolved_at.strftime('%d %B %Y, %H:%M') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-4">
+                        <h5>📝 Description</h5>
+                        <p class="text-muted">{{ complaint.description }}</p>
+                    </div>
+
+                    {% if complaint.image_filename %}
+                    <div class="mb-4">
+                        <h5>📷 Attached Photo</h5>
+                        <a href="{{ url_for('static', filename='uploads/' + complaint.image_filename) }}" target="_blank">
+                            <img src="{{ url_for('static', filename='uploads/' + complaint.image_filename) }}"
+                                 class="complaint-image" alt="Complaint photo">
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <strong>🤖 AI Analysis:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><strong>Category:</strong> {{ complaint.category }} (auto-detected)</li>
+                            <li><strong>Priority:</strong> {{ complaint.priority }} (auto-detected)</li>
+                            <li><strong>Confidence:</strong> {{ "%.1f"|format(complaint.ai_confidence * 100) }}%</li>
+                        </ul>
+                    </div>
+
+                    {% if complaint.status == 'resolved' and complaint.resolution_notes %}
+                    <hr>
+                    <div class="mb-4">
+                        <h5>✅ Resolution Notes</h5>
+                        <p class="text-muted">{{ complaint.resolution_notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Actions Sidebar -->
+        {% if user.role in ['admin', 'warden'] %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">⚙️ Admin Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Update Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="open" {% if complaint.status == 'open' %}selected{% endif %}>Open</option>
+                                <option value="in_progress" {% if complaint.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                <option value="resolved" {% if complaint.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="resolution_notes" class="form-label">Resolution Notes</label>
+                            <textarea class="form-control" id="resolution_notes" name="resolution_notes" rows="4" placeholder="Add notes about how this complaint was resolved...">{{ complaint.resolution_notes or '' }}</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            💾 Update Complaint
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">📊 Quick Stats</h6>
+                </div>
+                <div class="card-body small">
+                    <p><strong>Status:</strong> <span class="status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span></p>
+                    <p><strong>Time Pending:</strong>
+                        {% set days = (now - complaint.created_at).days %}
+                        {% if days == 0 %}Today
+                        {% elif days == 1 %}1 day
+                        {% else %}{{ days }} days
+                        {% endif %}
+                    </p>
+                    <p><strong>AI Confidence:</strong> {{ "%.1f"|format(complaint.ai_confidence * 100) }}%</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📊 Status Info</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <p><strong>Current Status:</strong></p>
+                        <p><span class="status-{{ complaint.status }} fs-5">{{ complaint.status|replace('_', ' ')|title }}</span></p>
+                    </div>
+                    <div class="mb-3">
+                        <p><strong>Priority:</strong></p>
+                        <p><span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span></p>
+                    </div>
+                    <div>
+                        <p><strong>Category:</strong></p>
+                        <p><span class="badge bg-info">{{ complaint.category }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            ← Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
