@@ -98,7 +98,7 @@ def classify_with_gemini(title, description, image_path):
 # ---------------------------------------------------------------------------
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hostel_complaints.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hostel_complaints_v2.db'
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
