@@ -3,45 +3,201 @@
 {% block title %}Login - Hostel Complaint Management{% endblock %}
 
 {% block content %}
+<style>
+    .login-container {
+        max-width: 460px;
+        margin: 60px auto;
+        animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-container .card {
+        border: none;
+        border-radius: 18px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+    }
+
+    .login-header {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        padding: 32px 20px 24px;
+        text-align: center;
+        color: white;
+    }
+
+    .login-header h2 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.6rem;
+    }
+
+    .login-header p {
+        margin: 6px 0 0;
+        opacity: 0.85;
+        font-size: 0.9rem;
+    }
+
+    .role-toggle {
+        display: flex;
+        background: #f1f3f9;
+        border-radius: 12px;
+        padding: 4px;
+        margin-bottom: 24px;
+    }
+
+    .role-toggle button {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 10px 0;
+        border-radius: 9px;
+        font-weight: 600;
+        color: #6c757d;
+        transition: all 0.25s ease;
+        cursor: pointer;
+    }
+
+    .role-toggle button.active {
+        background: white;
+        color: #3a0ca3;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .login-body {
+        padding: 8px 32px 32px;
+    }
+
+    .login-body .form-control {
+        border-radius: 10px;
+        padding: 11px 14px;
+        border: 1px solid #dfe3ec;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .login-body .form-control:focus {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    }
+
+    .login-body .form-label {
+        font-weight: 500;
+        font-size: 0.9rem;
+        color: #333;
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(67, 97, 238, 0.35);
+    }
+
+    .login-links {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.88rem;
+        margin: 16px 0 8px;
+    }
+
+    .login-links a {
+        color: #4361ee;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .login-links a:hover {
+        color: #3a0ca3;
+        text-decoration: underline;
+    }
+
+    .demo-hint {
+        background: #f8f9fb;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-top: 20px;
+        font-size: 0.85rem;
+        color: #555;
+        border: 1px solid #eceff5;
+    }
+
+    .demo-hint strong {
+        color: #333;
+    }
+</style>
+
 <div class="login-container">
     <div class="card">
-        <div class="card-body p-5">
-            <h2 class="card-title text-center mb-4">🔐 Login</h2>
-            
+        <div class="login-header">
+            <h2>🔐 Welcome Back</h2>
+            <p>Login to manage or track your complaints</p>
+        </div>
+
+        <div class="login-body">
             {% if error %}
-            <div class="alert alert-danger" role="alert">
+            <div class="alert alert-danger mt-3" role="alert">
                 {{ error }}
             </div>
             {% endif %}
-            
+
+            <div class="role-toggle">
+                <button type="button" id="btnStudent" class="active" onclick="selectRole('student')">🎓 Student</button>
+                <button type="button" id="btnAdmin" onclick="selectRole('admin')">🛡️ Admin</button>
+            </div>
+
             <form method="POST">
+                <input type="hidden" name="login_as" id="login_as" value="student">
+
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
                     <input type="text" class="form-control" id="username" name="username" required>
-                    <small class="form-text text-muted">Demo: student1 or admin</small>
                 </div>
-                
+
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
                     <input type="password" class="form-control" id="password" name="password" required>
-                    <small class="form-text text-muted">Demo: password123 or admin123</small>
                 </div>
-                
-                <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+
+                <button type="submit" class="btn btn-primary btn-login w-100">Login</button>
             </form>
-            
+
+            <div class="login-links">
+                <a href="{{ url_for('login_otp') }}">📧 Login with OTP</a>
+                <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+            </div>
+
             <hr>
-            
-            <p class="text-center mb-0">
-                Don't have an account? <a href="{{ url_for('register') }}" class="text-decoration-none">Register here</a>
+
+            <p class="text-center mb-0" style="font-size: 0.9rem;">
+                Don't have an account? <a href="{{ url_for('register') }}" style="color:#4361ee; text-decoration:none; font-weight:500;">Register here</a>
             </p>
+
+            <div class="demo-hint">
+                <strong>Demo Credentials</strong><br>
+                🎓 Student: <code>student1</code> / <code>password123</code><br>
+                🛡️ Admin: <code>admin</code> / <code>admin123</code>
+            </div>
         </div>
     </div>
-    
-    <div class="alert alert-info mt-3" role="alert">
-        <strong>Demo Credentials:</strong><br>
-        <strong>Student:</strong> username: student1 | password: password123<br>
-        <strong>Admin:</strong> username: admin | password: admin123
-    </div>
 </div>
+
+<script>
+function selectRole(role) {
+    document.getElementById('login_as').value = role;
+    document.getElementById('btnStudent').classList.toggle('active', role === 'student');
+    document.getElementById('btnAdmin').classList.toggle('active', role === 'admin');
+}
+</script>
 {% endblock %}

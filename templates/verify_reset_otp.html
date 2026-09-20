@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Verify OTP{% endblock %}
+{% block content %}
+<div class="login-container">
+    <div class="card">
+        <div class="card-body p-5">
+            <h2 class="card-title text-center mb-4">🔢 Enter OTP</h2>
+            <p class="text-center text-muted">Code bheja gaya hai: {{ session.get('otp_email') }}</p>
+            {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="otp" class="form-label">OTP Code</label>
+                    <input type="text" class="form-control" id="otp" name="otp" maxlength="6" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mb-3">Verify</button>
+            </form>
+            <p class="text-center mb-0"><a href="{{ url_for('forgot_password') }}" class="text-decoration-none">Resend OTP</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

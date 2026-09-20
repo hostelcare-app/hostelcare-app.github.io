@@ -7,48 +7,78 @@
     <div class="card">
         <div class="card-body p-5">
             <h2 class="card-title text-center mb-4">📝 Register</h2>
-            
+
             {% if error %}
             <div class="alert alert-danger" role="alert">
                 {{ error }}
             </div>
             {% endif %}
-            
+
+            <div class="btn-group w-100 mb-4" role="group">
+                <button type="button" class="btn btn-outline-primary active" id="btnStudent" onclick="selectRole('student')">🎓 Student</button>
+                <button type="button" class="btn btn-outline-primary" id="btnAdmin" onclick="selectRole('admin')">🛡️ Admin</button>
+            </div>
+
             <form method="POST">
+                <input type="hidden" name="signup_as" id="signup_as" value="student">
+
                 <div class="mb-3">
                     <label for="name" class="form-label">Full Name</label>
                     <input type="text" class="form-control" id="name" name="name" required>
                 </div>
-                
+
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
                     <input type="text" class="form-control" id="username" name="username" required>
                 </div>
-                
+
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
                     <input type="email" class="form-control" id="email" name="email" required>
                 </div>
-                
+
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
                     <input type="password" class="form-control" id="password" name="password" required>
                 </div>
-                
-                <div class="mb-3">
+
+                <div class="mb-3" id="roomField">
                     <label for="room_number" class="form-label">Room Number</label>
                     <input type="text" class="form-control" id="room_number" name="room_number" placeholder="e.g., A101">
                 </div>
-                
+
+                <div class="mb-3 d-none" id="hostelNameField">
+                    <label for="hostel_name" class="form-label">Hostel Name</label>
+                    <input type="text" class="form-control" id="hostel_name" name="hostel_name" placeholder="e.g., Boys Hostel A">
+                </div>
+
+                <div class="mb-3 d-none" id="adminCodeField">
+                    <label for="admin_code" class="form-label">Admin Access Code</label>
+                    <input type="password" class="form-control" id="admin_code" name="admin_code" placeholder="Apne hostel/warden ka code">
+                    <small class="form-text text-muted">Ye code sirf authorized staff ke paas hota hai.</small>
+                </div>
+
                 <button type="submit" class="btn btn-primary w-100 mb-3">Register</button>
             </form>
-            
+
             <hr>
-            
+
             <p class="text-center mb-0">
                 Already have an account? <a href="{{ url_for('login') }}" class="text-decoration-none">Login here</a>
             </p>
         </div>
     </div>
 </div>
+
+<script>
+function selectRole(role) {
+    document.getElementById('signup_as').value = role;
+    document.getElementById('btnStudent').classList.toggle('active', role === 'student');
+    document.getElementById('btnAdmin').classList.toggle('active', role === 'admin');
+
+    document.getElementById('roomField').classList.toggle('d-none', role === 'admin');
+    document.getElementById('hostelNameField').classList.toggle('d-none', role === 'student');
+    document.getElementById('adminCodeField').classList.toggle('d-none', role === 'student');
+}
+</script>
 {% endblock %}
