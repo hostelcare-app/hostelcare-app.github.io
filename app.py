@@ -561,85 +561,57 @@ def api_stats():
 
 
 @app.route('/api/chatbot', methods=['POST'])
-def chatbot():
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
     if 'user_id' not in session:
-        return jsonify({'reply': 'Pehle login karo chatbot use karne ke liye.'}), 401
+        return redirect(url_for('login'))
 
-    user_message = request.json.get('message', '').strip()
-    if not user_message:
-        return jsonify({'reply': 'Kuch likho na!'}), 400
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
 
-    if not _gemini_client:
-        return jsonify({'reply': 'Chatbot abhi available nahi hai (API key set nahi hai).'}), 200
+    message = None
+    error = None
 
-    try:
-        system_context = (
-            "You are a helpful assistant for a Hostel Complaint Management System website. "
-            "Answer ONLY questions related to using this website: how to submit a complaint, "
-            "how to check complaint status, how to login/register, how OTP login and forgot "
-            "password work, how admins manage workers, what categories exist "
-            "(electrical, plumbing, mess, wifi, safety, maintenance), and general hostel-related "
-            "queries. Keep answers short (2-4 sentences), friendly, and in the same language/style "
-            "as the user's question (Hindi/Hinglish/English). "
-            "If asked something unrelated to the hostel complaint system, politely redirect them "
-            "back to hostel-related topics. Do not make up information about specific complaints "
-            "or workers you don't have data on.\n\n"
-            f"User's question: {user_message}"
-        )
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
 
-        response = _gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[system_context],
-        )
+        if form_type == 'details':
+            new_name = request.form.get('name', '').strip()
+            new_email = request.form.get('email', '').strip()
+            new_room = request.form.get('room_number', '').strip()
 
-        reply = (response.text or "Sorry, samajh nahi aaya. Dobara try karo.").strip()
-        return jsonify({'reply': reply})
-    except Exception as e:
-        print("Chatbot error:", e)
-        return jsonify({'reply': 'Kuch gadbad ho gayi, thodi der baad try karo.'}), 200
+            existing = User.query.filter(User.email == new_email, User.id != user.id).first()
+            if existing:
+                error = 'Ye email pehle se kisi aur account se juda hai.'
+            elif not new_name or not new_email:
+                error = 'Naam aur Email zaroori hain.'
+            else:
+                user.name = new_name
+                user.email = new_email
+                if user.role == 'student':
+                    user.room_number = new_room
+                db.session.commit()
+                session['name'] = user.name
+                message = 'Profile update ho gayi.'
 
+        elif form_type == 'password':
+            current_password = request.form.get('current_password', '')
+            new_password = request.form.get('new_password', '')
+            confirm_password = request.form.get('confirm_password', '')
 
-def init_db():
-    with app.app_context():
-        db.create_all()
+            if not check_password_hash(user.password, current_password):
+                error = 'Current password galat hai.'
+            elif not new_password or new_password != confirm_password:
+                error = 'Naya password match nahi ho raha.'
+            elif len(new_password) < 6:
+                error = 'Password kam se kam 6 characters ka hona chahiye.'
+            else:
+                user.password = generate_password_hash(new_password)
+                db.session.commit()
+                message = 'Password successfully change ho gaya.'
 
-        if not User.query.filter_by(username='student1').first():
-            student = User(
-                username='student1',
-                password=generate_password_hash('password123'),
-                name='Rajesh Kumar',
-                email='rajesh@college.edu',
-                room_number='A101',
-                role='student'
-            )
-            db.session.add(student)
+    complaint_count = Complaint.query.filter_by(user_id=user.id).count() if user.role == 'student' else None
 
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                password=generate_password_hash('admin123'),
-                name='Warden Office',
-                email='admin@hostel.edu',
-                role='admin',
-                hostel_name='Main Hostel'
-            )
-            db.session.add(admin)
-
-        if Worker.query.count() == 0:
-            sample_workers = [
-                Worker(name='Ramesh Yadav', phone='9876543210', category='plumbing'),
-                Worker(name='Suresh Kumar', phone='9876543211', category='electrical'),
-                Worker(name='Dinesh Singh', phone='9876543212', category='maintenance'),
-                Worker(name='Kamla Devi', phone='9876543213', category='mess'),
-                Worker(name='Vikram Networks', phone='9876543214', category='wifi'),
-                Worker(name='Security Office', phone='9876543215', category='safety'),
-            ]
-            db.session.add_all(sample_workers)
-
-        db.session.commit()
-
-
-init_db()
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    return render_template('profile.html', user=user, message=message, error=error, complaint_count=complaint_count)

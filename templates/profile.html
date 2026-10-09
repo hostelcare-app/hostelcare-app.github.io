@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<style>
+    .profile-container { max-width: 640px; margin: 30px auto; }
+    .profile-card {
+        border: none;
+        border-radius: 18px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    .profile-header {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        color: white;
+        padding: 32px 28px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+    .avatar-circle {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 700;
+    }
+    .profile-header h4 { margin: 0; font-weight: 600; }
+    .profile-header p { margin: 2px 0 0; opacity: 0.85; font-size: 0.9rem; }
+    .role-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.25);
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+    .section-title {
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: #333;
+    }
+    .form-control {
+        border-radius: 10px;
+        padding: 10px 14px;
+        border: 1px solid #dfe3ec;
+    }
+    .form-control:focus {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    }
+    .btn-save {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        border: none;
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-weight: 600;
+        color: white;
+    }
+    .stat-box {
+        background: #f8f9fb;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        border: 1px solid #eceff5;
+    }
+    .stat-box .num { font-size: 1.6rem; font-weight: 700; color: #4361ee; }
+    .stat-box .label { font-size: 0.82rem; color: #666; }
+</style>
+
+<div class="profile-container">
+    {% if message %}
+    <div class="alert alert-success">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <div class="card profile-card">
+        <div class="profile-header">
+            <div class="avatar-circle">{{ user.name[0]|upper }}</div>
+            <div>
+                <h4>{{ user.name }}</h4>
+                <p>@{{ user.username }}</p>
+                <span class="role-badge">
+                    {% if user.role == 'student' %}🎓 Student{% else %}🛡️ Admin{% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            {% if user.role == 'student' and complaint_count is not none %}
+            <div class="row mb-4">
+                <div class="col-6">
+                    <div class="stat-box">
+                        <div class="num">{{ complaint_count }}</div>
+                        <div class="label">Total Complaints Filed</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-box">
+                        <div class="num">{{ user.room_number or '—' }}</div>
+                        <div class="label">Room Number</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.role == 'admin' and user.hostel_name %}
+            <div class="stat-box mb-4">
+                <div class="num">{{ user.hostel_name }}</div>
+                <div class="label">Hostel</div>
+            </div>
+            {% endif %}
+
+            <h6 class="section-title">📝 Edit Details</h6>
+            <form method="POST">
+                <input type="hidden" name="form_type" value="details">
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="name" class="form-control" value="{{ user.name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                </div>
+                {% if user.role == 'student' %}
+                <div class="mb-3">
+                    <label class="form-label">Room Number</label>
+                    <input type="text" name="room_number" class="form-control" value="{{ user.room_number or '' }}">
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-save">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card profile-card">
+        <div class="card-body p-4">
+            <h6 class="section-title">🔒 Change Password</h6>
+            <form method="POST">
+                <input type="hidden" name="form_type" value="password">
+                <div class="mb-3">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" name="current_password" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">New Password</label>
+                    <input type="password" name="new_password" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" name="confirm_password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-save">Change Password</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
