@@ -109,7 +109,9 @@ def send_otp_email(to_email, otp, purpose="login"):
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hostel_complaints_v2.db'
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'hostel_complaints_v2.db')
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
