@@ -617,3 +617,90 @@ def profile():
     complaint_count = Complaint.query.filter_by(user_id=user.id).count() if user.role == 'student' else None
 
     return render_template('profile.html', user=user, message=message, error=error, complaint_count=complaint_count)
+
+@app.route('/api/chatbot', methods=['POST'])
+def chatbot():
+    if 'user_id' not in session:
+        return jsonify({'reply': 'Pehle login karo chatbot use karne ke liye.'}), 401
+
+    user_message = request.json.get('message', '').strip()
+    if not user_message:
+        return jsonify({'reply': 'Kuch likho na!'}), 400
+
+    if not _gemini_client:
+        return jsonify({'reply': 'Chatbot abhi available nahi hai (API key set nahi hai).'}), 200
+
+    try:
+        system_context = (
+            "You are a helpful assistant for a Hostel Complaint Management System website. "
+            "Answer ONLY questions related to using this website: how to submit a complaint, "
+            "how to check complaint status, how to login/register, how OTP login and forgot "
+            "password work, how admins manage workers, what categories exist "
+            "(electrical, plumbing, mess, wifi, safety, maintenance), and general hostel-related "
+            "queries. Keep answers short (2-4 sentences), friendly, and in the same language/style "
+            "as the user's question (Hindi/Hinglish/English). "
+            "If asked something unrelated to the hostel complaint system, politely redirect them "
+            "back to hostel-related topics. Do not make up information about specific complaints "
+            "or workers you don't have data on.\n\n"
+            f"User's question: {user_message}"
+        )
+
+        response = _gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[system_context],
+        )
+
+        reply = (response.text or "Sorry, samajh nahi aaya. Dobara try karo.").strip()
+        return jsonify({'reply': reply})
+    except Exception as e:
+        print("Chatbot error:", e)
+        return jsonify({'reply': 'Kuch gadbad ho gayi, thodi der baad try karo.'}), 200
+def init_db():
+    from sqlalchemy import inspect as sa_inspect
+
+    with app.app_context():
+        db.create_all()
+
+        print("DB URI:", app.config['SQLALCHEMY_DATABASE_URI'])
+        print("Tables:", sa_inspect(db.engine).get_table_names())
+
+        if not User.query.filter_by(username='student1').first():
+            student = User(
+                username='student1',
+                password=generate_password_hash('password123'),
+                name='Rajesh Kumar',
+                email='rajesh@college.edu',
+                room_number='A101',
+                role='student'
+            )
+            db.session.add(student)
+
+        if not User.query.filter_by(username='admin').first():
+            admin = User(
+                username='admin',
+                password=generate_password_hash('admin123'),
+                name='Warden Office',
+                email='admin@hostel.edu',
+                role='admin',
+                hostel_name='Main Hostel'
+            )
+            db.session.add(admin)
+
+        if Worker.query.count() == 0:
+            sample_workers = [
+                Worker(name='Ramesh Yadav', phone='9876543210', category='plumbing'),
+                Worker(name='Suresh Kumar', phone='9876543211', category='electrical'),
+                Worker(name='Dinesh Singh', phone='9876543212', category='maintenance'),
+                Worker(name='Kamla Devi', phone='9876543213', category='mess'),
+                Worker(name='Vikram Networks', phone='9876543214', category='wifi'),
+                Worker(name='Security Office', phone='9876543215', category='safety'),
+            ]
+            db.session.add_all(sample_workers)
+
+        db.session.commit()
+
+
+init_db()
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)

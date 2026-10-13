@@ -30,11 +30,12 @@
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('dashboard') }}">🏠 Hostel Complaints</a>
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">📋 Dashboard</a>
                 {% if session.get('role') in ['admin', 'warden'] %}
                 <a href="{{ url_for('workers') }}" class="btn btn-outline-secondary btn-sm">👷 Workers</a>
                 {% endif %}
+                <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary btn-sm">👤 Profile</a>
                 <span class="text-muted small">{{ session.get('name') }}</span>
                 <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Logout</a>
             </div>
