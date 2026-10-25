@@ -672,6 +672,11 @@ def sitemap_xml():
     return app.response_class(body, mimetype='application/xml')
 
 
+@app.route('/googlee7024931898b0c9b.html')
+def google_verify():
+    return app.response_class('google-site-verification: googlee7024931898b0c9b.html', mimetype='text/html')
+
+
 def init_db():
     from sqlalchemy import inspect as sa_inspect
 
