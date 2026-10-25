@@ -655,6 +655,23 @@ def chatbot():
     except Exception as e:
         print("Chatbot error:", e)
         return jsonify({'reply': 'Kuch gadbad ho gayi, thodi der baad try karo.'}), 200
+@app.route('/robots.txt')
+def robots_txt():
+    lines = ['User-agent: *', 'Allow: /login', 'Allow: /register', 'Disallow: /dashboard', 'Disallow: /profile', 'Disallow: /workers', 'Disallow: /api/', 'Sitemap: https://hostelcare-app-github-io.onrender.com/sitemap.xml']
+    return app.response_class(chr(10).join(lines), mimetype='text/plain')
+
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    base = 'https://hostelcare-app-github-io.onrender.com'
+    body = '<?xml version="1.0" encoding="UTF-8"?>'
+    body += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    body += '<url><loc>' + base + '/login</loc></url>'
+    body += '<url><loc>' + base + '/register</loc></url>'
+    body += '</urlset>'
+    return app.response_class(body, mimetype='application/xml')
+
+
 def init_db():
     from sqlalchemy import inspect as sa_inspect
 
