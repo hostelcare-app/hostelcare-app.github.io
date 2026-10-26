@@ -434,7 +434,7 @@ def submit_complaint():
             title=title,
             description=description,
             category=category,
-            priority=priority,
+            priority=normalize_priority(priority, description),
             ai_confidence=confidence,
             image_filename=image_filename
         )
@@ -675,6 +675,21 @@ def sitemap_xml():
 @app.route('/googlee7024931898b0c9b.html')
 def google_verify():
     return app.response_class('google-site-verification: googlee7024931898b0c9b.html', mimetype='text/html')
+
+
+def normalize_priority(value, text=''):
+    v = str(value or '').strip().lower()
+    if v in ('high', 'medium', 'low'):
+        return v
+    if v in ('critical', 'urgent', 'severe', 'emergency'):
+        return 'high'
+    if v in ('minor', 'trivial'):
+        return 'low'
+    t = (text or '').lower()
+    high_words = ['fire', 'spark', 'short circuit', 'shock', 'smoke', 'gas', 'flood', 'leak', 'urgent', 'emergency', 'danger', 'theft', 'no water', 'harass', 'ragging']
+    if any(w in t for w in high_words):
+        return 'high'
+    return 'medium'
 
 
 def init_db():
