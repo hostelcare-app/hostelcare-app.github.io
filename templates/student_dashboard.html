@@ -27,7 +27,7 @@
                             <h5 class="card-title mb-2">{{ complaint.title }}</h5>
                             <small class="text-muted">{{ complaint.created_at.strftime('%d %b %Y, %H:%M') }}</small>
                         </div>
-                        <span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span>
+                        <span class="badge {% if complaint.priority == 'high' %}bg-danger{% elif complaint.priority == 'medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ complaint.priority|upper }}</span>
                     </div>
                 </div>
                 <div class="card-body">

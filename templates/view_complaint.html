@@ -92,7 +92,7 @@
                     <h3 class="mb-2">{{ complaint.title }}</h3>
                     <div class="d-flex gap-2 flex-wrap">
                         <span class="badge bg-info">{{ complaint.category }}</span>
-                        <span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span>
+                        <span class="badge {% if complaint.priority == 'high' %}bg-danger{% elif complaint.priority == 'medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ complaint.priority|upper }}</span>
                         <span class="status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span>
                     </div>
                 </div>
@@ -276,7 +276,7 @@
                     </div>
                     <div class="mb-3">
                         <p><strong>Priority:</strong></p>
-                        <p><span class="badge badge-{{ complaint.priority }}">{{ complaint.priority|upper }}</span></p>
+                        <p><span class="badge {% if complaint.priority == 'high' %}bg-danger{% elif complaint.priority == 'medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ complaint.priority|upper }}</span></p>
                     </div>
                     <div>
                         <p><strong>Category:</strong></p>
